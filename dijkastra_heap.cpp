@@ -4,43 +4,44 @@
 #include <ctime>
 #include <cstdlib>
 #include <unordered_set>
+#include <chrono>
+#include <numeric>
+#include <cmath>
 
 using namespace std;
 
 const int INF = numeric_limits<int>::max();
 
-// Estructura para representar una arista del grafo
 struct Arista {
-    int destino;  // Nodo destino de la arista
-    int peso;     // Peso de la arista
+    int destino;
+    int peso;
 };
 
-typedef vector<vector<Arista>> Grafo;  // Definición del tipo de dato para el grafo
+typedef vector<vector<Arista>> Grafo;
 
-// Implementación de un Heap Binario desde cero
 class HeapBinario {
 public:
     HeapBinario(int n) {
-        data.reserve(n);  // Reserva espacio para n elementos
+        data.reserve(n);
     }
 
     bool estaVacio() const {
-        return data.empty();  // Retorna true si el heap está vacío
+        return data.empty();
     }
 
     void insertar(int distancia, int nodo) {
-        data.push_back({distancia, nodo});  // Inserta un nuevo elemento
-        disminuirClave(data.size() - 1);    // Ajusta la posición del nuevo elemento
+        data.push_back({distancia, nodo});
+        disminuirClave(data.size() - 1);
     }
 
     pair<int, int> extraerMinimo() {
         if (data.empty()) {
-            return {INF, -1};  // Retorna un valor inválido si el heap está vacío
+            return {INF, -1};
         }
         pair<int, int> minElement = data[0];
         data[0] = data.back();
         data.pop_back();
-        heapificar(0);  // Mantiene la propiedad del heap
+        heapificar(0);
         return minElement;
     }
 
@@ -52,7 +53,7 @@ public:
     }
 
 private:
-    vector<pair<int, int>> data;  // Vector para almacenar los elementos del heap
+    vector<pair<int, int>> data;
 
     int padre(int i) const {
         return (i - 1) / 2;
@@ -83,7 +84,6 @@ private:
     }
 };
 
-// Implementación del algoritmo de Dijkstra utilizando un Heap Binario
 vector<int> dijkstraHeap(const Grafo& grafo, int origen) {
     int n = grafo.size();
     vector<int> dist(n, INF);
@@ -106,8 +106,7 @@ vector<int> dijkstraHeap(const Grafo& grafo, int origen) {
     return dist;
 }
 
-// Generación de un grafo aleatorio
-Grafo generarGrafo(int numVertices, int numAristas) {
+Grafo generarMultigrafo(int numVertices, int numAristas) {
     if (numVertices <= 0 || numAristas <= 0) {
         cerr << "El número de vértices y aristas debe ser mayor que 0." << endl;
         exit(1);
@@ -116,7 +115,6 @@ Grafo generarGrafo(int numVertices, int numAristas) {
     Grafo grafo(numVertices);
     srand(time(0));
 
-    // Generar árbol cobertor para asegurar conectividad
     for (int i = 1; i < numVertices; ++i) {
         int j = rand() % i;
         int peso = rand() % 100 + 1;
@@ -124,31 +122,20 @@ Grafo generarGrafo(int numVertices, int numAristas) {
         grafo[j].push_back({i, peso});
     }
 
-    unordered_set<string> aristas;
-    for (int i = 1; i < numVertices; ++i) {
-        aristas.insert(to_string(min(i, i-1)) + "-" + to_string(max(i, i-1)));
-    }
-
-    // Añadir aristas adicionales hasta llegar a numAristas aristas
     int aristasAgregadas = numVertices - 1;
     while (aristasAgregadas < numAristas) {
         int u = rand() % numVertices;
         int v = rand() % numVertices;
         if (u != v) {
-            string aristaStr = to_string(min(u, v)) + "-" + to_string(max(u, v));
-            if (aristas.find(aristaStr) == aristas.end()) {
-                int peso = rand() % 100 + 1;
-                grafo[u].push_back({v, peso});
-                grafo[v].push_back({u, peso});
-                aristas.insert(aristaStr);
-                aristasAgregadas++;
-            }
+            int peso = rand() % 100 + 1;
+            grafo[u].push_back({v, peso});
+            grafo[v].push_back({u, peso});
+            aristasAgregadas++;
         }
     }
     return grafo;
 }
 
-// Realización de experimentos
 void realizarExperimento() {
     vector<int> is = {10, 12, 14};
     for (int i : is) {
@@ -161,16 +148,25 @@ void realizarExperimento() {
         }
         for (int j : js) {
             int numAristas = 1 << j;
-            double tiempoTotal = 0;
+            vector<double> tiemposConsulta;
+
             for (int k = 0; k < 50; ++k) {
-                Grafo grafo = generarGrafo(numVertices, numAristas);
+                Grafo grafo = generarMultigrafo(numVertices, numAristas);
                 int origen = rand() % numVertices;
-                clock_t inicio = clock();
+
+                auto start = std::chrono::high_resolution_clock::now();
                 dijkstraHeap(grafo, origen);
-                clock_t fin = clock();
-                tiempoTotal += double(fin - inicio) / CLOCKS_PER_SEC;
+                auto end = std::chrono::high_resolution_clock::now();
+
+                std::chrono::duration<double> tiempoConsulta = end - start;
+                tiemposConsulta.push_back(tiempoConsulta.count());
             }
-            cout << "i: " << i << ", j: " << j << ", Tiempo Promedio: " << tiempoTotal / 50 << " segundos" << endl;
+
+            double tiempoTotalConsultas = std::accumulate(tiemposConsulta.begin(), tiemposConsulta.end(), 0.0);
+            double tiempoPromedio = tiempoTotalConsultas / tiemposConsulta.size();
+            
+            cout << "i: " << i << ", j: " << j << ", Tiempo Total: " << tiempoTotalConsultas << " segundos" << endl;
+            cout << "i: " << i << ", j: " << j << ", Tiempo Promedio: " << tiempoPromedio << " segundos" << endl;
         }
     }
 }
