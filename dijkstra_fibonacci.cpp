@@ -8,6 +8,8 @@
 #include <unordered_map>
 #include <cmath>
 #include <list>
+#include <chrono>
+#include <numeric>
 
 using namespace std;
 
@@ -234,7 +236,7 @@ vector<int> dijkstraColaFibonacci(const Grafo& grafo, int origen) {
 }
 
 // Generación de un grafo aleatorio
-Grafo generarGrafo(int numVertices, int numAristas) {
+Grafo generarMultigrafo(int numVertices, int numAristas) {
     if (numVertices <= 0 || numAristas <= 0) {
         cerr << "El número de vértices y aristas debe ser mayor que 0." << endl;
         exit(1);
@@ -251,25 +253,16 @@ Grafo generarGrafo(int numVertices, int numAristas) {
         grafo[j].push_back({i, peso});
     }
 
-    unordered_set<string> aristas;
-    for (int i = 1; i < numVertices; ++i) {
-        aristas.insert(to_string(min(i, i-1)) + "-" + to_string(max(i, i-1)));
-    }
-
     // Añadir aristas adicionales hasta llegar a numAristas aristas
     int aristasAgregadas = numVertices - 1;
     while (aristasAgregadas < numAristas) {
         int u = rand() % numVertices;
         int v = rand() % numVertices;
         if (u != v) {
-            string aristaStr = to_string(min(u, v)) + "-" + to_string(max(u, v));
-            if (aristas.find(aristaStr) == aristas.end()) {
-                int peso = rand() % 100 + 1;
-                grafo[u].push_back({v, peso});
-                grafo[v].push_back({u, peso});
-                aristas.insert(aristaStr);
-                aristasAgregadas++;
-            }
+            int peso = rand() % 100 + 1;
+            grafo[u].push_back({v, peso});
+            grafo[v].push_back({u, peso});
+            aristasAgregadas++;
         }
     }
     return grafo;
@@ -288,19 +281,29 @@ void realizarExperimento() {
         }
         for (int j : js) {
             int numAristas = 1 << j;
-            double tiempoTotal = 0;
+            vector<double> tiemposConsulta;
+
             for (int k = 0; k < 50; ++k) {
-                Grafo grafo = generarGrafo(numVertices, numAristas);
+                Grafo grafo = generarMultigrafo(numVertices, numAristas);
                 int origen = rand() % numVertices;
-                clock_t inicio = clock();
+
+                auto start = std::chrono::high_resolution_clock::now();
                 dijkstraColaFibonacci(grafo, origen);
-                clock_t fin = clock();
-                tiempoTotal += double(fin - inicio) / CLOCKS_PER_SEC;
+                auto end = std::chrono::high_resolution_clock::now();
+
+                std::chrono::duration<double> tiempoConsulta = end - start;
+                tiemposConsulta.push_back(tiempoConsulta.count());
             }
-            cout << "i: " << i << ", j: " << j << ", Tiempo Promedio: " << tiempoTotal / 50 << " segundos" << endl;
+
+            double tiempoTotalConsultas = std::accumulate(tiemposConsulta.begin(), tiemposConsulta.end(), 0.0);
+            double tiempoPromedio = tiempoTotalConsultas / tiemposConsulta.size();
+            
+            cout << "i: " << i << ", j: " << j << ", Tiempo Total: " << tiempoTotalConsultas << " segundos" << endl;
+            cout << "i: " << i << ", j: " << j << ", Tiempo Promedio: " << tiempoPromedio << " segundos" << endl;
         }
     }
 }
+
 
 int main() {
     realizarExperimento();
