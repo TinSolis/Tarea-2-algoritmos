@@ -1,1 +1,1 @@
-Dentro de dijkastra_heap.cpp y dijkstra_fibonacci.cpp se encuentran tanto las estructuras como los main correspondientes para correr los algoritmos, los resultados de estos fueron guardados en dijkstra_fibonacci_output.txt y dijkstra_heap_output.txt.
+Dentro de dijkastra_heap.cpp y dijkstra_fibonacci.cpp se encuentran tanto las estructuras como los main correspondientes para correr los algoritmos, los resultados de estos fueron guardados en dijkstra_fibonacci_output.txt y dijkstra_heap_output.txt. En Latex_Tarea_2_CC4102.pdf se encuentra el pdf con el informe.
